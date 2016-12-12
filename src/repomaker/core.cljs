@@ -16,7 +16,7 @@
 (def commander (nodejs/require "commander"))
 
 (doto commander
-  (.version "0.0.1")
+  (.version "0.1.1")
   (.option "-r, --repo <name>" "name of new repo")
   (.option "-t, --type <name>" "type of project")
   (.option "-c, --confd <dir>" "configuration directory",

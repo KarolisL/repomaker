@@ -1,6 +1,6 @@
 {
   "name": "repomaker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "bin": { "repomaker": "./bin/repomaker.js"},
   "engines": {
     "node": "0.12.x"

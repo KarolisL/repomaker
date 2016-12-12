@@ -29,7 +29,7 @@
   (let [finished-ch (chan)
         out-ch (chan)]
     (.post github (str "/orgs/" org "/repos")
-           #js {:repo repo :private true}
+           #js {:name repo :private true}
            (partial gh-callback repo finished-ch))
     (go (let [[err status body] (<! finished-ch)]
           (cond
