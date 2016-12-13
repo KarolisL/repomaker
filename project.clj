@@ -36,6 +36,8 @@
                                        :output-dir    "target/server_dev"
                                        :target        :nodejs
                                        :optimizations :none
+                                       :language-in   :ecmascript6
+                                       :language-out  :ecmascript5
                                        :source-map    true}}
                        {:id           "prod"
                         :source-paths ["src"]
@@ -43,11 +45,14 @@
                                        :output-to     "bin/repomaker.js"
                                        :output-dir    "target/server_prod"
                                        :target        :nodejs
+                                       :language-in   :ecmascript6
+                                       :language-out  :ecmascript5
                                        :optimizations :simple}}
                        {:id           "test-none"
                         :source-paths ["src" "test"]
                         :compiler     {:optimizations :none
                                        :target        :nodejs
+                                       :language-in   :ecmascript6
                                        :output-dir    "out-test-none"
                                        :output-to     "target/repomaker-test-none.js"
                                        :externs       ["externs.js"]
