@@ -61,13 +61,13 @@
   (let [finished-ch (async/merge (map (partial add-team github org repo-name) teams))
         out-ch (chan)]
     (go-loop [result :success]
-             (when-let [[err status body headers team-name] (<! finished-ch)]
-               (if err
-                 (do (println (str "github: error adding team " team-name ": " (format-error repo-name err)))
-                     (recur :failure))
-                 (do (println (str "github: team '" team-name "' added succesfully to repo '" repo-name "'"))
-                     (recur :success))))
-             (>! out-ch result))
+      (when-let [[err status body headers team-name] (<! finished-ch)]
+        (if err
+          (do (println (str "github: error adding team " team-name ": " (format-error repo-name err)))
+              (recur :failure))
+          (do (println (str "github: team '" team-name "' added succesfully to repo '" repo-name "'"))
+              (recur :success))))
+      (>! out-ch result))
     out-ch))
 
 (defn abort [subsystem atom']
