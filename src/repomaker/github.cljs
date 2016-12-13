@@ -1,7 +1,8 @@
 (ns repomaker.github
   (:require [cljs.core.async :as async]
             [cljs.core.async :as async :refer [<! >! close! chan]]
-            [cljs.nodejs :as nodejs])
+            [cljs.nodejs :as nodejs]
+            [cljs-callback-heaven.core :refer [<print >?]])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))
 
 
@@ -63,7 +64,7 @@
     (go-loop [result :success]
       (when-let [[err status body headers team-name] (<! finished-ch)]
         (if err
-          (do (println (str "github: error adding team " team-name ": " (format-error repo-name err)))
+          (do (println (str "github: error adding team '" team-name "': " (format-error repo-name err)))
               (recur :failure))
           (do (println (str "github: team '" team-name "' added succesfully to repo '" repo-name "'"))
               (recur :success))))
@@ -82,6 +83,30 @@
          #js {:username user
               :password pass})))
 
+(defn permissions-for [teams team-name]
+  (->> teams
+       (filter #(= (:name %) team-name))
+       (first)
+       (:permissions)))
+
+(defn team-ids [github org teams]
+  (let [tmp-ch (chan)
+        out-ch (chan)
+        team-names (set (map :name teams))]
+    (.get github (str "/orgs/" org "/teams")
+          #js {}
+          (partial gh-callback "" tmp-ch))
+    (go
+      (let [[err status js-body] (<! tmp-ch)
+            body (js->clj js-body :keywordize-keys true)]
+        (if body
+          (>! out-ch (->> body
+                          (filter #(contains? team-names (:name %)))
+                          (map (fn [team] {:name        (:name team)
+                                           :id          (:id team)
+                                           :permissions (permissions-for teams (:name team))})))))))
+    out-ch))
+
 (defn setup [organization repo user pass teams]
   (println (str "Creating GitHub for '" repo "' in '" organization "'"))
   (let [abort? (atom false)
@@ -90,8 +115,11 @@
       (when (= (<! (create-repo github organization repo)) :failure)
         (abort "github.repo" abort?))
       (when-not @abort?
-        (when (= (<! (add-teams github organization repo teams)) :failure)
-          (abort "github.teams" abort?)))
+        (let [teams-with-id (<! (team-ids github organization teams))]
+          (if (not= (count teams-with-id) (count teams))
+            (abort "github.fetch-teams" abort?)
+            (when (= (<! (add-teams github organization repo teams-with-id)) :failure)
+              (abort "github.teams" abort?)))))
 
       (<! (async/timeout 1000))
 
