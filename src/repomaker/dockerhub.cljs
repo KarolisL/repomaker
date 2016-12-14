@@ -98,6 +98,27 @@
                   (go (>! ch :failure)))))
     ch))
 
+(defn permissions-for [teams name]
+  (->> teams
+       (filter #(= (:name %) name))
+       (first)
+       (:permissions)))
+
+(defn team-ids [organization teams]
+  (let [ch (chan)]
+    (go
+      (let [team-names (set (map :name teams))
+            all-teams-js (<! (dh-get (str "/orgs/" organization "/groups") "results"))
+            all-teams (js->clj all-teams-js :keywordize-keys true)]
+        (>! ch (->> all-teams
+                    (filter #(contains? team-names (:name %)))
+                    (map (fn [{:keys [name id]}]
+                           {:name        name
+                            :id          id
+                            :permissions (permissions-for teams name)}))))))
+    ch))
+
+
 (defn setup [organization name user pass teams]
   (println (str "Creating DockerHub for '" name "' in '" organization "'"))
   (println "dockerhub: logging in")
@@ -108,8 +129,9 @@
         (when (= (<! (create-repo organization name)) :failure)
           (abort "dockerhub.repo" failed?)))
       (when-not @failed?
-        (when (= (<! (add-teams organization name teams)) :failure)
-          (abort "dockerhub.teams" failed?)))
+        (let [teams-with-id (<! (team-ids organization teams))]
+          (when (= (<! (add-teams organization name teams-with-id)) :failure)
+            (abort "dockerhub.teams" failed?))))
 
       (<! (async/timeout 1000))
 
