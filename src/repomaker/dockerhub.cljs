@@ -40,7 +40,7 @@
 (defn already-exists? [err]
   (= (error-text err) "Repository with this Name and Namespace already exists."))
 
-(defn create-repo [org repo]
+(defn create-repo [org repo private?]
   (let [out (chan)]
     (go
       (let [[ret _] (<! (dh-post repo "/repositories/"
@@ -48,7 +48,7 @@
                                       :name             repo
                                       :description      ""
                                       :full-description ""
-                                      :is_private       true}))]
+                                      :is_private       private?}))]
         (cond
           (already-exists? ret) (do (>! out :already-exists)
                                     (println (str "dockerhub: repo '" repo "' already exists")))
@@ -119,14 +119,14 @@
     ch))
 
 
-(defn setup [organization name user pass teams]
+(defn setup [organization name user pass teams private?]
   (println (str "Creating DockerHub for '" name "' in '" organization "'"))
   (println "dockerhub: logging in")
   (let [failed? (atom false)]
     (go
       (<! (login user pass failed?))
       (when-not @failed?
-        (when (= (<! (create-repo organization name)) :failure)
+        (when (= (<! (create-repo organization name private?)) :failure)
           (abort "dockerhub.repo" failed?)))
       (when-not @failed?
         (let [teams-with-id (<! (team-ids organization teams))]

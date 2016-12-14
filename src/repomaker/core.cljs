@@ -90,9 +90,11 @@
       (validate-args commander)
       (validate-type config proj-type)
       (when (contains? providers "github")
-        (github/setup (org config :github proj-type) repo-name gh-user gh-pass (teams config :github proj-type)))
+        (github/setup (org config :github proj-type) repo-name gh-user gh-pass (teams config :github proj-type)
+                      (get-in config [proj-type :github :private] true)))
       (when (contains? providers "dockerhub")
-        (dockerhub/setup (org config :dockerhub proj-type) repo-name dh-user dh-pass (teams config :dockerhub proj-type))))))
+        (dockerhub/setup (org config :dockerhub proj-type) repo-name dh-user dh-pass (teams config :dockerhub proj-type)
+                         (get-in config [proj-type :dockerhub :private] true))))))
 
 (set! *main-cli-fn* -main)
 

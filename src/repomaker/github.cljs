@@ -26,11 +26,11 @@
        (= (aget err "message") "Validation Failed")
        (= (http-error-msg err) "name already exists on this account")))
 
-(defn create-repo [github org repo]
+(defn create-repo [github org repo private?]
   (let [finished-ch (chan)
         out-ch (chan)]
     (.post github (str "/orgs/" org "/repos")
-           #js {:name repo :private true}
+           #js {:name repo :private private?}
            (partial gh-callback repo finished-ch))
     (go (let [[err status body] (<! finished-ch)]
           (cond
@@ -108,12 +108,12 @@
                                   :permissions (permissions-for teams name)})))))))
     out-ch))
 
-(defn setup [organization repo user pass teams]
+(defn setup [organization repo user pass teams private?]
   (println (str "Creating GitHub for '" repo "' in '" organization "'"))
   (let [abort? (atom false)
         github (github-client user pass)]
     (go
-      (when (= (<! (create-repo github organization repo)) :failure)
+      (when (= (<! (create-repo github organization repo private?)) :failure)
         (abort "github.repo" abort?))
       (when-not @abort?
         (let [teams-with-id (<! (team-ids github organization teams))]
