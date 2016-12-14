@@ -75,7 +75,7 @@
 
 (defn validate-type [config ^keyword proj-type]
   (when (nil? (-> config (:types) (proj-type)))
-    (throw (new js/Error (str "Unknown project type: '" proj-type "'")))))
+    (throw (new js/Error (str "Unknown project type: '" (name proj-type) "'")))))
 
 (defn -main [& args]
   (when-not (env "NOP")
