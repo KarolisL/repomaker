@@ -102,9 +102,10 @@
         (if body
           (>! out-ch (->> body
                           (filter #(contains? team-names (:name %)))
-                          (map (fn [team] {:name        (:name team)
-                                           :id          (:id team)
-                                           :permissions (permissions-for teams (:name team))})))))))
+                          (map (fn [{:keys [name id]}]
+                                 {:name        name
+                                  :id          id
+                                  :permissions (permissions-for teams name)})))))))
     out-ch))
 
 (defn setup [organization repo user pass teams]
