@@ -130,6 +130,8 @@
           (abort "dockerhub.repo" failed?)))
       (when-not @failed?
         (let [teams-with-id (<! (team-ids organization teams))]
+          (if (not= (count teams-with-id) (count teams))
+            (abort "dockerhub.fetch-teams" failed?))
           (when (= (<! (add-teams organization name teams-with-id)) :failure)
             (abort "dockerhub.teams" failed?))))
 
