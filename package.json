@@ -1,0 +1,16 @@
+{
+  "name": "repomaker",
+  "version": "0.2.1",
+  "bin": { "repomaker": "./bin/repomaker.js"},
+  "engines": {
+    "node": "0.12.x"
+  },
+  "dependencies": {
+    "docker-hub-api": "^0.5.1",
+    "axios": "0.15.3"
+  },
+  "devDependencies": {
+    "source-map-support": "0.4.0",
+    "ws": "0.8.1"
+  }
+}
