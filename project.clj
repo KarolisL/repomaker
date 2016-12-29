@@ -1,4 +1,4 @@
-(defproject repomaker "0.2.1"
+(defproject repomaker "0.1.0-SNAPSHOT"
   :description "FIXME: write this!"
   :url "http://example.com/FIXME"
 
@@ -17,6 +17,12 @@
             [lein-npm "0.6.2"]
             [lein-doo "0.1.6"]
             [lein-shell "0.5.0"]]
+
+  :npm {:dependencies    [[docker-hub-api "0.5.1"]
+                          [axios "0.15.3"]]
+        :devDependencies [[source-map-support "0.4.0"]
+                          ; For Figwheel
+                          [ws "1.1.1"]]}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/tools.nrepl "0.2.10"]]
@@ -72,5 +78,5 @@
             "release" ["do"
                        ["cljsbuild" "once" "prod"]
                        "copy-prod-release"
-                       ["shell" "npm" "publish"]]})
+                       ]})
 

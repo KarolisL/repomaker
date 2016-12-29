@@ -10,4 +10,3 @@ figwheel_server.log
 pom.xml
 .idea
 *.iml
-dev.cljs
