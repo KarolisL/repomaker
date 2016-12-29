@@ -1,20 +1,28 @@
-(defproject dynamodb-backup "0.1.0-SNAPSHOT"
+(defproject repomaker "0.1.0-SNAPSHOT"
   :description "FIXME: write this!"
   :url "http://example.com/FIXME"
 
   :min-lein-version "2.5.3"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.7.170"]
+                 [org.clojure/clojurescript "1.9.293"]
+                 [org.clojure/tools.cli "0.3.5"]
                  [figwheel-sidecar "0.5.2"]
                  [org.bodil/pylon "0.3.0"]
                  [org.clojure/core.async "0.2.395"]
-                 [com.cemerick/piggieback "0.2.1"]
-                 [mount "0.1.10"]]
+                 [com.cemerick/piggieback "0.2.1"]]
 
-  :plugins [[lein-cljsbuild "1.1.1"]
+  :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.0-2"]
-            [lein-doo "0.1.6"]]
+            [lein-npm "0.6.2"]
+            [lein-doo "0.1.6"]
+            [lein-shell "0.5.0"]]
+
+  :npm {:dependencies    [[docker-hub-api "0.5.1"]
+                          [axios "0.15.3"]]
+        :devDependencies [[source-map-support "0.4.0"]
+                          ; For Figwheel
+                          [ws "1.1.1"]]}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/tools.nrepl "0.2.10"]]
@@ -32,22 +40,26 @@
                         :figwheel     true
                         :compiler     {
                                        :main          repomaker.core
-                                       :output-to     "target/server_dev/repomaker.js"
-                                       :output-dir    "target/server_dev"
+                                       :output-to     "target/dev/repomaker.js"
+                                       :output-dir    "target/dev"
                                        :target        :nodejs
                                        :optimizations :none
                                        :language-in   :ecmascript6
                                        :language-out  :ecmascript5
-                                       :source-map    true}}
+                                       :source-map    true
+                                       :pretty-print  true}}
                        {:id           "prod"
                         :source-paths ["src"]
                         :compiler     {
-                                       :output-to     "bin/repomaker.js"
-                                       :output-dir    "target/server_prod"
+                                       :output-to     "target/prod/repomaker.js"
+                                       :output-dir    "target/prod"
                                        :target        :nodejs
                                        :language-in   :ecmascript6
                                        :language-out  :ecmascript5
-                                       :optimizations :simple}}
+                                       :optimizations :simple
+                                       :pretty-print  true
+                                       :verbose       true
+                                       :source-map    "target/prod/repomaker.js.map"}}
                        {:id           "test-none"
                         :source-paths ["src" "test"]
                         :compiler     {:optimizations :none
@@ -58,9 +70,13 @@
                                        :externs       ["externs.js"]
                                        :verbose       true
                                        :pretty-print  true}}]}
-  :figwheel {
-             ;; Start an nREPL server into the running figwheel process
-             :nrepl-port 7888
-             }
-  :doo {:build "test-none"})
+  :figwheel {:nrepl-port 7888}
+  :doo {:build "test-none"}
+  :aliases {"copy-prod-release"
+                      ["do"
+                       ["shell" "cp" "target/prod/repomaker.js" "target/prod/repomaker.js.map" "bin/"]]
+            "release" ["do"
+                       ["cljsbuild" "once" "prod"]
+                       "copy-prod-release"
+                       ]})
 

@@ -1,5 +1,6 @@
 (ns repomaker.dockerhub
-  (:require [cljs.nodejs :as nodejs]
+  (:require [repomaker.promises :refer [put&close]]
+            [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [<! >! close! chan]]
             [cljs.pprint :as pp]
             [cljs-callback-heaven.core :refer [<print >?]])
@@ -12,10 +13,6 @@
 (defn delete-repo [org name]
   (.makeDeleteRequest
     dh (str "/repositories/" org "/" name)))
-
-(defn put&close [ch context]
-  (fn [data] (go (>! ch [data context])
-                 (close! ch))))
 
 (defn dh-post
   ([context path body]

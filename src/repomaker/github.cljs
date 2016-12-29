@@ -1,87 +1,106 @@
 (ns repomaker.github
-  (:require [cljs.core.async :as async]
+  (:require [repomaker.promises :refer [put&close]]
+            [cljs.core.async :as async]
             [cljs.core.async :as async :refer [<! >! close! chan]]
             [cljs.nodejs :as nodejs]
-            [cljs-callback-heaven.core :refer [<print >?]])
+            [cljs-callback-heaven.core :refer [<print >?]]
+            [repomaker.config :as config]
+            [clojure.set :as set])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))
 
+(defn first-error-msg [data]
+  (:message (first (:errors data))))
 
-(defn gh-callback
-  [name ch err status body headers]
-  (go (>! ch [err status body headers name])
-      (close! ch)))
+(defn- repo-already-exists? [resp]
+  (let [data (:data resp)]
+    (and (= (:message data) "Validation Failed")
+         (= (first-error-msg data) "name already exists on this account"))))
 
+(defn resp-status [js-resp]
+  (:status js-resp))
 
-(defn format-error [repo err]
-  (let [body (js->clj (aget err "body"))
-        status (js->clj (aget err "statusCode"))]
-    (str err body status)))
+(defn http-success? [resp]
+  (< 199
+     (:status resp)
+     300))
 
-(def abort-on-error? true)
-(defn http-error-msg [err]
-  (:message (first (js->clj (aget err "body" "errors") :keywordize-keys true))))
+(defn format-error [resp]
+  (let [msg (:message (:data resp))
+        status (resp-status resp)]
+    (str "[" (:status resp) "='" (:statusText resp) "'] "
+         msg)))
 
-(defn- repo-already-exists? [err]
-  (and err
-       (= (aget err "message") "Validation Failed")
-       (= (http-error-msg err) "name already exists on this account")))
+(def supported-methods #{:get :post :put})
+(defn request [make-gh-client method path obj & {:keys [context]}]
+  (when-not (supported-methods method)
+    (throw (new js/Error (str "Unsupported method: " method))))
+  (let [c (chan)]
+    (-> (.request (make-gh-client)
+                  #js {:method (name method)
+                       :url    path
+                       :data   (clj->js obj)})
+        (.then (put&close c (or context "github.generic"))
+               (put&close c (or context "github.generic"))))
+    c))
 
-(defn create-repo [github org repo private?]
-  (let [finished-ch (chan)
-        out-ch (chan)]
-    (.post github (str "/orgs/" org "/repos")
-           #js {:name repo :private private?}
-           (partial gh-callback repo finished-ch))
-    (go (let [[err status body] (<! finished-ch)]
-          (cond
-            (repo-already-exists? err)
-            (do
-              (>! out-ch :already-exists)
-              (println (str "github: repo '" repo "'already exists")))
-
-            err
-            (do
-              (>! out-ch :failure)
-              (println (str "github: error creating repo '" repo "': " (format-error repo err))))
-
-            :else (do (>! out-ch :success)
-                      (println (str "github: repo succesfully created"))))))
-    out-ch))
-
-
-
-(defn add-team [github org repo-name {:keys [name permissions id]}]
+(defn create-repo [gh-http org repo private?]
   (let [ch (chan)]
-    (.put github (str "/teams/" id "/repos/" org "/" repo-name)
-          #js {:permissions permissions}
-          (partial gh-callback name ch))
+    (go
+      (let [[js-resp _] (<! (request gh-http
+                                     :post (str "/orgs/" org "/repos")
+                                     {:name repo :private private?}))
+            resp (js->clj js-resp :keywordize-keys true)
+            log (partial println "github.create-repo:")]
+        (cond
+          (repo-already-exists? resp)
+          (do
+            (>! ch gh-http)
+            (log (str "repo '" repo "'already exists")))
+
+          (not (http-success? resp))
+          (do
+            (close! ch)
+            (log (str "error creating repo '" repo "': " (format-error resp))))
+
+          :else (do (>! ch gh-http)
+                    (log "github: repo succesfully created")))))
     ch))
 
 
-(defn add-teams [github org repo-name teams]
-  (let [finished-ch (async/merge (map (partial add-team github org repo-name) teams))
-        out-ch (chan)]
+
+(defn add-team [gh-http org repo-name {:keys [name permissions id]}]
+  (request gh-http
+           :put (str "/teams/" id "/repos/" org "/" repo-name)
+           {:permissions permissions}))
+
+
+(defn add-teams [gh-http org repo-name teams]
+  (let [finished-ch (async/merge (map
+                                   (partial add-team gh-http org repo-name)
+                                   teams))
+        out-ch (chan)
+        log (partial println "github.add-teams:")]
     (go-loop [result :success]
-      (when-let [[err status body headers team-name] (<! finished-ch)]
-        (if err
-          (do (println (str "github: error adding team '" team-name "': " (format-error repo-name err)))
-              (recur :failure))
-          (do (println (str "github: team '" team-name "' added succesfully to repo '" repo-name "'"))
-              (recur :success))))
-      (>! out-ch result))
+      (when-let [[js-resp team-name] (<! finished-ch)]
+        (let [resp (js->clj js-resp :keywordize-keys true)]
+          (if (not (http-success? resp))
+            (do (log (str "error adding team '" team-name
+                          "' to repo '" repo-name "': " (format-error resp)))
+                (recur :failure))
+            (do (log (str "team '" team-name "' added succesfully to repo '" repo-name "'"))
+                (recur :success)))))
+      (if (= result :success)
+        (>! out-ch gh-http)
+        (close! out-ch)))
     out-ch))
 
-(defn abort [subsystem atom']
-  (do (reset! atom' abort-on-error?)
-      (println (str subsystem ": ABORTING"))))
-
 (defn github-client [user pass]
-  (let [gh (nodejs/require "octonode")]
-    (new gh.client
-         #js {:username user
-              :password pass}
-         #js {:username user
-              :password pass})))
+  (.create (cljs.nodejs/require "axios")
+           #js {:baseURL        "https://api.github.com/"
+                :timeout        1000
+                :auth           #js {:username user
+                                     :password pass}
+                :validateStatus nil}))
 
 (defn permissions-for [teams team-name]
   (->> teams
@@ -89,42 +108,57 @@
        (first)
        (:permissions)))
 
-(defn team-ids [github org teams]
-  (let [tmp-ch (chan)
-        out-ch (chan)
-        team-names (set (map :name teams))]
-    (.get github (str "/orgs/" org "/teams")
-          #js {}
-          (partial gh-callback "" tmp-ch))
+(defn teams-with-id [gh-http org teams]
+  (let [out-ch (chan)
+        team-names (set (map :name teams))
+        log (partial println "github.fetch-teams:")]
     (go
-      (let [[err status js-body] (<! tmp-ch)
-            body (js->clj js-body :keywordize-keys true)]
-        (if body
-          (>! out-ch (->> body
+      (log "Fetching!")
+      (let [[js-resp _] (<! (request gh-http
+                                     :get (str "/orgs/" org "/teams")
+                                     {}))
+            resp (js->clj js-resp :keywordize-keys true)]
+        (if (http-success? resp)
+          (>! out-ch (->> (:data resp)
                           (filter #(contains? team-names (:name %)))
                           (map (fn [{:keys [name id]}]
                                  {:name        name
                                   :id          id
-                                  :permissions (permissions-for teams name)})))))))
+                                  :permissions (permissions-for teams name)}))))
+          (do (log (str "Unable to fetch teams: " resp))
+              (close! out-ch)))))
     out-ch))
+
+(defn name-set [teams]
+  (->> teams
+       (map #(:name %))
+       (set)))
+
+(defn all-teams-found? [fetched-teams actual-teams]
+  (let [name-diff (set/difference (name-set fetched-teams) (name-set actual-teams))
+        log (partial println "github.fetch-teams:")]
+    (if (empty? name-diff)
+
+      actual-teams
+      (log (str "Unable to fetch following team IDs: " name-diff)))))
 
 (defn setup [organization repo user pass teams private?]
   (println (str "Creating GitHub for '" repo "' in '" organization "'"))
-  (let [abort? (atom false)
-        github (github-client user pass)]
-    (go
-      (when (= (<! (create-repo github organization repo private?)) :failure)
-        (abort "github.repo" abort?))
-      (when-not @abort?
-        (let [teams-with-id (<! (team-ids github organization teams))]
-          (if (not= (count teams-with-id) (count teams))
-            (abort "github.fetch-teams" abort?)
-            (when (= (<! (add-teams github organization repo teams-with-id)) :failure)
-              (abort "github.teams" abort?)))))
-
-      (<! (async/timeout 1000))
-
-      (if @abort?
-        (println "github: FAILURE")
-        (println "github: SUCCESS")))))
+  (let [gh-http #(.create (cljs.nodejs/require "axios")
+                          #js {:baseURL        "https://api.github.com/"
+                               :timeout        1000
+                               :auth           #js {:username user
+                                                    :password pass}
+                               :validateStatus nil})]
+    (go (-> (some->
+              (create-repo gh-http organization repo private?)
+              (<!)
+              (teams-with-id organization teams)
+              (<!)
+              (all-teams-found? teams)
+              (->> (add-teams gh-http organization repo))
+              (<!))
+            (if
+              (println "github: SUCESS")
+              (println "github: FAILURE"))))))
 

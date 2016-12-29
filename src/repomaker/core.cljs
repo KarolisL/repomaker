@@ -5,12 +5,22 @@
             [cljs.nodejs :as nodejs]
             [cljs.reader :as reader]
             [cljs.core.async :as async :refer [<! >! close! chan]]
+    ; FIXME
+            [repomaker.dev :as devvv]
             [cljs.tools.cli :as cli]
             [clojure.string :as string]
             [cljs-callback-heaven.core :refer [<print >?]])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))
 
 (nodejs/enable-util-print!)
+
+(defn env [name]
+  (aget process.env name))
+
+(when (env "SM")
+  (try
+    (.install (nodejs/require "source-map-support"))
+    (catch js/Error e :ignore)))
 
 (def mandatory-args #{:repo :type})
 (defn args-missing? [args]
@@ -24,8 +34,6 @@
                               true)
         :else (recur false (rest remaining-opts))))))
 
-(defn env [name]
-  (aget process.env name))
 
 (defn incorrect-type? [types ^keyword proj-type]
   (when (nil? (-> types (proj-type)))
@@ -47,20 +55,17 @@
 
 
 (defn -main [& args]
-  (when-not (nil? (env "NOP"))
-    (println "Starting")
+  (when (nil? (env "NOP"))
     (let [{:keys [options errors summary]} (cljs.tools.cli/parse-opts args cli-options)
           {:keys [types credentials]} (config/read-dir (:confd options))
           proj-type (:type options)
           repo-name (:repo options)
           providers (:providers options)]
-      (js/console.log (clj->js options))
       (if (or (:help options)
               (args-missing? options)
               (incorrect-type? types proj-type))
         (println (str (string/join \newline errors) "\n\nOptions summary:\n\n" summary))
         (when-not (:dry-run options)
-          (println providers)
           (when (contains? providers "github")
             (println "github")
             (github/setup (get-in types [proj-type :github :org])
