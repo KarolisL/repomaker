@@ -135,12 +135,11 @@
        (set)))
 
 (defn all-teams-found? [fetched-teams actual-teams]
-  (let [name-diff (set/difference (name-set fetched-teams) (name-set actual-teams))
+  (let [name-diff (set/difference (name-set actual-teams) (name-set fetched-teams))
         log (partial println "github.fetch-teams:")]
     (if (empty? name-diff)
-
-      actual-teams
-      (log (str "Unable to fetch following team IDs: " name-diff)))))
+      fetched-teams
+      (log (str "Unable to fetch following team ids: " name-diff)))))
 
 (defn setup [organization repo user pass teams private?]
   (println (str "Creating GitHub for '" repo "' in '" organization "'"))
