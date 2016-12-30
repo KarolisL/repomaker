@@ -55,7 +55,7 @@
           (repo-already-exists? resp)
           (do
             (>! ch gh-http)
-            (log (str "repo '" repo "'already exists")))
+            (log (str "repo '" repo "' already exists")))
 
           (not (http-success? resp))
           (do
