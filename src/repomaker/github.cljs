@@ -114,9 +114,8 @@
         team-names (set (map :name teams))
         log (partial println "github.fetch-teams:")]
     (go
-      (log "Fetching!")
       (let [[js-resp _] (<! (request gh-http
-                                     :get (str "/orgs/" org "/teams")
+                                     :get (str "/orgs/" org "/teams?per_page=100")
                                      {}))
             resp (js->clj js-resp :keywordize-keys true)]
         (if (http-success? resp)
