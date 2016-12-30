@@ -71,7 +71,8 @@
 (defn add-team [gh-http org repo-name {:keys [name permissions id]}]
   (request gh-http
            :put (str "/teams/" id "/repos/" org "/" repo-name)
-           {:permissions permissions}))
+           {:permissions permissions}
+           :context name))
 
 
 (defn add-teams [gh-http org repo-name teams]
