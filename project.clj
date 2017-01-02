@@ -1,5 +1,5 @@
-(defproject repomaker "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
+(defproject repomaker "0.2.3"
+  :description "Create repositories in github and dockerhub"
   :url "http://example.com/FIXME"
 
   :min-lein-version "2.5.3"
