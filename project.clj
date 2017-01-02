@@ -14,11 +14,15 @@
 
   :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.0-2"]
-            [lein-npm "0.6.2"]
+            [org.clojars.karolisl/lein-npm "0.6.2"]
             [lein-doo "0.1.6"]
             [lein-shell "0.5.0"]]
 
-  :npm {:dependencies    [[docker-hub-api "0.5.1"]
+  :npm {
+        :repository      "github:KarolisL/repomaker"
+        :license         "EPL-1.0"
+        :private         false
+        :dependencies    [[docker-hub-api "0.5.1"]
                           [axios "0.15.3"]]
         :devDependencies [[source-map-support "0.4.0"]
                           ; For Figwheel
@@ -77,6 +81,8 @@
                        ["shell" "cp" "target/prod/repomaker.js" "target/prod/repomaker.js.map" "bin/"]]
             "release" ["do"
                        ["cljsbuild" "once" "prod"]
-                       "copy-prod-release"
-                       ]})
+                       "copy-prod-release"]
+            "publish" ["do"
+                       "release"
+                       ["npm" "publish"]]})
 
