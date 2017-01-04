@@ -1,4 +1,4 @@
-(defproject repomaker "0.2.3"
+(defproject repomaker "0.2.4"
   :description "Create repositories in github and dockerhub"
   :url "http://example.com/FIXME"
 
@@ -14,7 +14,7 @@
 
   :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.0-2"]
-            [org.clojars.karolisl/lein-npm "0.6.2"]
+            [org.clojars.karolisl/lein-npm "0.6.3-SNAPSHOT"]
             [lein-doo "0.1.6"]
             [lein-shell "0.5.0"]]
 
@@ -22,6 +22,7 @@
         :repository      "github:KarolisL/repomaker"
         :license         "EPL-1.0"
         :private         false
+        :bin             {:repomaker "./bin/repomaker.js"}
         :dependencies    [[docker-hub-api "0.5.1"]
                           [axios "0.15.3"]]
         :devDependencies [[source-map-support "0.4.0"]
