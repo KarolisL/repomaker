@@ -25,10 +25,10 @@
      300))
 
 (defn format-error [resp]
-  (let [msg (:message (:data resp))
-        status (resp-status resp)]
+  (if-let [msg (:message (:data resp))]
     (str "[" (:status resp) "='" (:statusText resp) "'] "
-         msg)))
+         msg)
+    resp))
 
 (def supported-methods #{:get :post :put})
 (defn request [make-gh-client method path obj & {:keys [context]}]
