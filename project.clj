@@ -1,4 +1,4 @@
-(defproject repomaker "0.2.4"
+(defproject repomaker "0.2.5"
   :description "Create repositories in github and dockerhub"
   :url "http://example.com/FIXME"
 
@@ -78,12 +78,19 @@
   :figwheel {:nrepl-port 7888}
   :doo {:build "test-none"}
   :aliases {"copy-prod-release"
-                      ["do"
-                       ["shell" "cp" "target/prod/repomaker.js" "target/prod/repomaker.js.map" "bin/"]]
+                         ["do"
+                          ["shell" "cp" "target/prod/repomaker.js" "target/prod/repomaker.js.map" "bin/"]]
             "build-prod" ["do"
-                       ["cljsbuild" "once" "prod"]
-                       "copy-prod-release"]
-            "publish" ["do"
-                       "build-prod"
-                       ["npm" "publish"]]})
+                          ["cljsbuild" "once" "prod"]
+                          "copy-prod-release"]
+            "publish"    ["do"
+                          "build-prod"
+                          ["npm" "publish"]]}
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version"
+                   "leiningen.release/bump-version" "release"]
+                  ["vcs" "tag" "v"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["publish"]])
 
