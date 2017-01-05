@@ -55,32 +55,31 @@
 
 
 (defn -main [& args]
-  (when (nil? (env "NOP"))
-    (let [{:keys [options errors summary]} (cljs.tools.cli/parse-opts args cli-options)
-          {:keys [types credentials]} (config/read-dir (:confd options))
-          proj-type (:type options)
-          repo-name (:repo options)
-          providers (:providers options)]
-      (if (or (:help options)
-              (args-missing? options)
-              (incorrect-type? types proj-type))
-        (println (str (string/join \newline errors) "\n\nOptions summary:\n\n" summary))
-        (when-not (:dry-run options)
-          (when (contains? providers "github")
-            (println "github")
-            (github/setup (get-in types [proj-type :github :org])
-                          repo-name
-                          (or (env "GH_USER") (get-in credentials [:github :user]))
-                          (or (env "GH_PASS") (get-in credentials [:github :pass]))
-                          (get-in types [proj-type :github :teams])
-                          (get-in types [proj-type :github :private] true)))
-          (when (contains? providers "dockerhub")
-            (dockerhub/setup (get-in types [proj-type :dockerhub :org])
-                             repo-name
-                             (or (env "DH_USER") (get-in credentials [:dockerhub :user]))
-                             (or (env "DH_PASS") (get-in credentials [:dockerhub :pass]))
-                             (get-in types [proj-type :dockerhub :teams])
-                             (get-in types [proj-type :dockerhub :private] true))))))))
+  (let [{:keys [options errors summary]} (cljs.tools.cli/parse-opts args cli-options)
+        {:keys [types credentials]} (config/read-dir (:confd options))
+        proj-type (:type options)
+        repo-name (:repo options)
+        providers (:providers options)]
+    (if (or (:help options)
+            (args-missing? options)
+            (incorrect-type? types proj-type))
+      (println (str (string/join \newline errors) "\n\nOptions summary:\n\n" summary))
+      (when-not (:dry-run options)
+        (when (contains? providers "github")
+          (println "github")
+          (github/setup (get-in types [proj-type :github :org])
+                        repo-name
+                        (or (env "GH_USER") (get-in credentials [:github :user]))
+                        (or (env "GH_PASS") (get-in credentials [:github :pass]))
+                        (get-in types [proj-type :github :teams])
+                        (get-in types [proj-type :github :private] true)))
+        (when (contains? providers "dockerhub")
+          (dockerhub/setup (get-in types [proj-type :dockerhub :org])
+                           repo-name
+                           (or (env "DH_USER") (get-in credentials [:dockerhub :user]))
+                           (or (env "DH_PASS") (get-in credentials [:dockerhub :pass]))
+                           (get-in types [proj-type :dockerhub :teams])
+                           (get-in types [proj-type :dockerhub :private] true)))))))
 
 (set! *main-cli-fn* -main)
 

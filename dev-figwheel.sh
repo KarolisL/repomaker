@@ -3,7 +3,7 @@
 delay=${1:-1}
 
 while [ 1 ]; do 
-    NOP=true node target/dev/repomaker.js --repo int-test1
+    node target/dev/repomaker.js --invalid-opt
     printf "$(date)::: Sleeping for ${delay} sec\n"
     sleep ${delay}
 done
