@@ -1,4 +1,4 @@
-(defproject repomaker "0.2.5"
+(defproject repomaker "0.2.6-SNAPSHOT"
   :description "Create repositories in github and dockerhub"
   :url "http://example.com/FIXME"
 
