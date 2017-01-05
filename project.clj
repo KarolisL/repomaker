@@ -80,10 +80,10 @@
   :aliases {"copy-prod-release"
                       ["do"
                        ["shell" "cp" "target/prod/repomaker.js" "target/prod/repomaker.js.map" "bin/"]]
-            "release" ["do"
+            "build-prod" ["do"
                        ["cljsbuild" "once" "prod"]
                        "copy-prod-release"]
             "publish" ["do"
-                       "release"
+                       "build-prod"
                        ["npm" "publish"]]})
 
