@@ -36,7 +36,7 @@
 (defn already-exists? [err]
   (= (error-text err) "Repository with this Name and Namespace already exists."))
 
-(defn create-repo [org repo private?]
+(defn create-repo! [org repo private?]
   (let [out (chan)]
     (go
       (let [[ret _] (<! (dh-post repo "/repositories/"
@@ -68,7 +68,7 @@
            (str "repositories/" org "/" repo-name "/groups/")
            #js {:group_id id :permission permissions}))
 
-(defn add-teams [org repo-name teams]
+(defn add-teams! [org repo-name teams]
   (let [out-ch (chan)
         finished-ch (->> teams
                          (map (partial add-team org repo-name))
@@ -122,13 +122,13 @@
     (go
       (<! (login user pass failed?))
       (when-not @failed?
-        (when (= (<! (create-repo organization name private?)) :failure)
+        (when (= (<! (create-repo! organization name private?)) :failure)
           (abort "dockerhub.repo" failed?)))
       (when-not @failed?
         (let [teams-with-id (<! (team-ids organization teams))]
           (if (not= (count teams-with-id) (count teams))
             (abort "dockerhub.fetch-teams" failed?))
-          (when (= (<! (add-teams organization name teams-with-id)) :failure)
+          (when (= (<! (add-teams! organization name teams-with-id)) :failure)
             (abort "dockerhub.teams" failed?))))
 
       (<! (async/timeout 1000))

@@ -15,9 +15,6 @@
     (and (= (:message data) "Validation Failed")
          (= (first-error-msg data) "name already exists on this account"))))
 
-(defn resp-status [js-resp]
-  (:status js-resp))
-
 (defn http-success? [resp]
   (< 199
      (:status resp)
@@ -42,7 +39,7 @@
                (put&close c (or context "github.generic"))))
     c))
 
-(defn create-repo [gh-http org repo private?]
+(defn create-repo! [gh-http org repo private?]
   (let [ch (chan)]
     (go
       (let [[js-resp _] (<! (request gh-http
@@ -74,7 +71,7 @@
            :context name))
 
 
-(defn add-teams [gh-http org repo-name teams]
+(defn add-teams! [gh-http org repo-name teams]
   (let [finished-ch (async/merge (map
                                    (partial add-team gh-http org repo-name)
                                    teams))
@@ -149,12 +146,12 @@
                                                     :password pass}
                                :validateStatus nil})]
     (go (if (some->
-              (create-repo gh-http organization repo private?)
+              (create-repo! gh-http organization repo private?)
               (<!)
               (fetch-teams-with-id organization teams)
               (<!)
               (all-teams-found? teams)
-              (as-> teams-with-id (add-teams gh-http organization repo teams-with-id))
+              (as-> teams-with-id (add-teams! gh-http organization repo teams-with-id))
               (<!))
           (println "github: SUCESS")
           (println "github: FAILURE")))))
