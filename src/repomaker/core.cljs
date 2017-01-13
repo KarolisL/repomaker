@@ -47,8 +47,7 @@
     :default (str (env "HOME") "/.repomaker")]
    ["-p" "--providers LIST" "Providers to use. Defaults to github,dockerhub"
     :default #{"github" "dockerhub"}
-    :parse-fn #(do (println %)
-                   (set (string/split % ",")))]
+    :parse-fn #(set (string/split % ","))]
    ["-n" "--dry-run" "Do not really execute, just print what would happen"]
    ["-h" "--help"]])
 
@@ -65,7 +64,6 @@
       (println (str (string/join \newline errors) "\n\nOptions summary:\n\n" summary))
       (when-not (:dry-run options)
         (when (contains? providers "github")
-          (println "github")
           (github/setup (get-in types [proj-type :github :org])
                         repo-name
                         (or (env "GH_USER") (get-in credentials [:github :user]))
