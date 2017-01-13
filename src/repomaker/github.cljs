@@ -108,7 +108,7 @@
        (first)
        (:permissions)))
 
-(defn teams-with-id [gh-http org teams]
+(defn fetch-teams-with-id [gh-http org teams]
   (let [out-ch (chan)
         team-names (set (map :name teams))
         log (partial println "github.fetch-teams:")]
@@ -151,10 +151,10 @@
     (go (-> (some->
               (create-repo gh-http organization repo private?)
               (<!)
-              (teams-with-id organization teams)
+              (fetch-teams-with-id organization teams)
               (<!)
               (all-teams-found? teams)
-              (->> (add-teams gh-http organization repo))
+              (as-> teams-with-id (add-teams gh-http organization repo teams-with-id))
               (<!))
             (if
               (println "github: SUCESS")
