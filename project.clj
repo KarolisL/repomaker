@@ -24,10 +24,10 @@
         :private         false
         :bin             {:repomaker "./bin/repomaker.js"}
         :dependencies    [[docker-hub-api "0.5.1"]
-                          [axios "0.15.3"]]
-        :devDependencies [[source-map-support "0.4.0"]
-                          ; For Figwheel
-                          [ws "1.1.1"]]}
+                          [slackbots "1.0.2"]
+                          [axios "0.15.3"]
+                          [source-map-support "0.4.0"]]
+        :devDependencies []}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/tools.nrepl "0.2.10"]]
