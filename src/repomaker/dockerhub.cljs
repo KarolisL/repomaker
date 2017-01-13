@@ -101,18 +101,16 @@
        (:permissions)))
 
 (defn team-ids [organization teams]
-  (let [ch (chan)]
-    (go
-      (let [team-names (set (map :name teams))
-            [all-teams-js _] (<! (dh-get (str "/orgs/" organization "/groups") "results"))
-            all-teams (js->clj all-teams-js :keywordize-keys true)]
-        (>! ch (->> all-teams
-                    (filter #(contains? team-names (:name %)))
-                    (map (fn [{:keys [name id]}]
-                           {:name        name
-                            :id          id
-                            :permissions (permissions-for teams name)}))))))
-    ch))
+  (go
+    (let [team-names (set (map :name teams))
+          [all-teams-js _] (<! (dh-get (str "/orgs/" organization "/groups") "results"))
+          all-teams (js->clj all-teams-js :keywordize-keys true)]
+      (->> all-teams
+           (filter #(contains? team-names (:name %)))
+           (map (fn [{:keys [name id]}]
+                  {:name        name
+                   :id          id
+                   :permissions (permissions-for teams name)}))))))
 
 
 (defn setup [organization name user pass teams private?]
