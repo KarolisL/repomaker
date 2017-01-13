@@ -3,7 +3,6 @@
             [cljs.core.async :as async]
             [cljs.core.async :as async :refer [<! >! close! chan]]
             [cljs.nodejs :as nodejs]
-            [cljs-callback-heaven.core :refer [<print >?]]
             [repomaker.config :as config]
             [clojure.set :as set])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))

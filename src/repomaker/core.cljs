@@ -8,8 +8,7 @@
     ; FIXME
             [repomaker.dev :as devvv]
             [cljs.tools.cli :as cli]
-            [clojure.string :as string]
-            [cljs-callback-heaven.core :refer [<print >?]])
+            [clojure.string :as string])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))
 
 (nodejs/enable-util-print!)

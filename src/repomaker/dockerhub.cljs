@@ -2,8 +2,7 @@
   (:require [repomaker.promises :refer [put&close]]
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [<! >! close! chan]]
-            [cljs.pprint :as pp]
-            [cljs-callback-heaven.core :refer [<print >?]])
+            [cljs.pprint :as pp])
   (:use-macros [cljs.core.async.macros :only [go go-loop]]))
 
 (def dh (let [inst (nodejs/require "docker-hub-api")]
