@@ -144,7 +144,7 @@
   (println (str "Creating GitHub for '" repo "' in '" organization "'"))
   (let [gh-http #(.create (cljs.nodejs/require "axios")
                           #js {:baseURL        "https://api.github.com/"
-                               :timeout        1000
+                               :timeout        5000
                                :auth           #js {:username user
                                                     :password pass}
                                :validateStatus nil})]
