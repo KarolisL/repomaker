@@ -26,7 +26,7 @@
 (defn dh-get [path extract]
   (let [ch (chan)]
     (-> (.makeGetRequest dh path extract)
-        (.then (>? ch)))
+        (.then (put&close ch "")))
     ch))
 
 
@@ -104,7 +104,7 @@
   (let [ch (chan)]
     (go
       (let [team-names (set (map :name teams))
-            all-teams-js (<! (dh-get (str "/orgs/" organization "/groups") "results"))
+            [all-teams-js _] (<! (dh-get (str "/orgs/" organization "/groups") "results"))
             all-teams (js->clj all-teams-js :keywordize-keys true)]
         (>! ch (->> all-teams
                     (filter #(contains? team-names (:name %)))
