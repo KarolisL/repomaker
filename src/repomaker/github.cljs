@@ -148,7 +148,7 @@
                                :auth           #js {:username user
                                                     :password pass}
                                :validateStatus nil})]
-    (go (-> (some->
+    (go (if (some->
               (create-repo gh-http organization repo private?)
               (<!)
               (fetch-teams-with-id organization teams)
@@ -156,7 +156,6 @@
               (all-teams-found? teams)
               (as-> teams-with-id (add-teams gh-http organization repo teams-with-id))
               (<!))
-            (if
-              (println "github: SUCESS")
-              (println "github: FAILURE"))))))
+          (println "github: SUCESS")
+          (println "github: FAILURE")))))
 
