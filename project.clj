@@ -67,11 +67,12 @@
                                        :source-map    "target/prod/repomaker.js.map"}}
                        {:id           "test-none"
                         :source-paths ["src" "test"]
-                        :compiler     {:optimizations :none
+                        :compiler     {:main          repomaker.runner
+                                       :optimizations :none
                                        :target        :nodejs
                                        :language-in   :ecmascript6
-                                       :output-dir    "out-test-none"
-                                       :output-to     "target/repomaker-test-none.js"
+                                       :output-dir    "target/test"
+                                       :output-to     "target/test/repomaker-test-none.js"
                                        :externs       ["externs.js"]
                                        :verbose       true
                                        :pretty-print  true}}]}
